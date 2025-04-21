@@ -266,67 +266,7 @@ def afficher_ecran_fin_partie():
 
 while True:
     horloge.tick(60)  # Limite à 60 FPS
-    
-    # Gestion des événements
-    for evenement in pygame.event.get():
-        if evenement.type == QUIT:
-            pygame.quit()
-            sys.exit()
-            
-        position_souris = pygame.mouse.get_pos()
-        
-        if etat_actuel == ETAT_ACCUEIL:
-            # Mise à jour de l'état des boutons
-            verifier_survol_bouton(bouton_5_points, position_souris)
-            verifier_survol_bouton(bouton_11_points, position_souris)
-            verifier_survol_bouton(bouton_21_points, position_souris)
-            verifier_survol_bouton(bouton_start, position_souris)
-            
-            if est_bouton_clique(bouton_5_points, evenement):
-                points_max = 5
-            elif est_bouton_clique(bouton_11_points, evenement):
-                points_max = 11
-            elif est_bouton_clique(bouton_21_points, evenement):
-                points_max = 21
-            elif est_bouton_clique(bouton_start, evenement):
-                etat_actuel = ETAT_JEU
-                reinitialiser_jeu()
-                score_gauche = 0
-                score_droite = 0
-                
-        elif etat_actuel == ETAT_FIN_PARTIE:
-            # Mise à jour de l'état des boutons
-            verifier_survol_bouton(bouton_recommencer, position_souris)
-            verifier_survol_bouton(bouton_accueil, position_souris)
-            
-            if est_bouton_clique(bouton_recommencer, evenement):
-                etat_actuel = ETAT_JEU
-                reinitialiser_jeu()
-                score_gauche = 0
-                score_droite = 0
-            elif est_bouton_clique(bouton_accueil, evenement):
-                etat_actuel = ETAT_ACCUEIL
-                
-        elif etat_actuel == ETAT_JEU:
-            if evenement.type == pygame.KEYDOWN:
-                if evenement.key == pygame.K_s:  # S pour descendre à gauche
-                    mouv_bas_g = True
-                elif evenement.key == pygame.K_z:  # Z pour monter à gauche
-                    mouv_haut_g = True
-                elif evenement.key == pygame.K_DOWN:
-                    mouv_bas_d = True
-                elif evenement.key == pygame.K_UP:
-                    mouv_haut_d = True
-            elif evenement.type == pygame.KEYUP:
-                if evenement.key == pygame.K_s:
-                    mouv_bas_g = False
-                elif evenement.key == pygame.K_z:
-                    mouv_haut_g = False
-                elif evenement.key == pygame.K_DOWN:
-                    mouv_bas_d = False
-                elif evenement.key == pygame.K_UP:
-                    mouv_haut_d = False
-    
+       
     # Affichage en fonction de l'état
     if etat_actuel == ETAT_ACCUEIL:
         afficher_ecran_accueil()
@@ -535,4 +475,64 @@ while True:
             else:
                 mon_ecran.blit(texte_bonus, (3 * largeur // 4 - texte_bonus.get_width() // 2, 20))
     
+    # Gestion des événements
+    for evenement in pygame.event.get():
+        if evenement.type == QUIT:
+            pygame.quit()
+            sys.exit()
+            
+        position_souris = pygame.mouse.get_pos()
+        
+        if etat_actuel == ETAT_ACCUEIL:
+            # Mise à jour de l'état des boutons
+            verifier_survol_bouton(bouton_5_points, position_souris)
+            verifier_survol_bouton(bouton_11_points, position_souris)
+            verifier_survol_bouton(bouton_21_points, position_souris)
+            verifier_survol_bouton(bouton_start, position_souris)
+            
+            if est_bouton_clique(bouton_5_points, evenement):
+                points_max = 5
+            elif est_bouton_clique(bouton_11_points, evenement):
+                points_max = 11
+            elif est_bouton_clique(bouton_21_points, evenement):
+                points_max = 21
+            elif est_bouton_clique(bouton_start, evenement):
+                etat_actuel = ETAT_JEU
+                reinitialiser_jeu()
+                score_gauche = 0
+                score_droite = 0
+                
+        elif etat_actuel == ETAT_FIN_PARTIE:
+            # Mise à jour de l'état des boutons
+            verifier_survol_bouton(bouton_recommencer, position_souris)
+            verifier_survol_bouton(bouton_accueil, position_souris)
+            
+            if est_bouton_clique(bouton_recommencer, evenement):
+                etat_actuel = ETAT_JEU
+                reinitialiser_jeu()
+                score_gauche = 0
+                score_droite = 0
+            elif est_bouton_clique(bouton_accueil, evenement):
+                etat_actuel = ETAT_ACCUEIL
+                
+        elif etat_actuel == ETAT_JEU:
+            if evenement.type == pygame.KEYDOWN:
+                if evenement.key == pygame.K_s:  # S pour descendre à gauche
+                    mouv_bas_g = True
+                elif evenement.key == pygame.K_z:  # Z pour monter à gauche
+                    mouv_haut_g = True
+                elif evenement.key == pygame.K_DOWN:
+                    mouv_bas_d = True
+                elif evenement.key == pygame.K_UP:
+                    mouv_haut_d = True
+            elif evenement.type == pygame.KEYUP:
+                if evenement.key == pygame.K_s:
+                    mouv_bas_g = False
+                elif evenement.key == pygame.K_z:
+                    mouv_haut_g = False
+                elif evenement.key == pygame.K_DOWN:
+                    mouv_bas_d = False
+                elif evenement.key == pygame.K_UP:
+                    mouv_haut_d = False
+
     pygame.display.flip()
