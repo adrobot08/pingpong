@@ -12,10 +12,10 @@ BLEU = (0, 0, 255)
 GRIS = (128, 128, 128)
 
 skin_selectionne = {
-    "balle": "normale",      # "normale", "flamme", "électrique", "glace"
+    "balle": "normale",      # "normale", "flamme", "electrique", "glace"
     "raquette": "classique", # "classique", "laser", "feu", "pixel"
     "fond": "vert",          # "vert", "bleu", "nuit", "futur"
-    "style": "moderne"       # "moderne", "retro", "néon", "cartoon"
+    "style": "moderne"       # "moderne", "retro", "neon", "cartoon"
 }
 
 
@@ -77,11 +77,11 @@ def dessiner_bouton(bouton, surface):
     pygame.draw.rect(surface, couleur_actuelle, bouton['rect'])
     pygame.draw.rect(surface, (0, 0, 0), bouton['rect'], 2)  # Bordure
     
-     # Choix de la police en fonction du texte (exemple simplifié)
-    if bouton['texte'] == "COMMANDES":
-        texte_surface = pygame.font.SysFont('arial', 24).render(bouton['texte'], True, (0, 0, 0))
-
+    # Pour le bouton pause, on garde une police spéciale
+    if bouton['texte'] == "⏸":
+        texte_surface = pygame.font.SysFont('arial', 30).render(bouton['texte'], True, (0, 0, 0))
     else:
+        # Pour tous les autres boutons, on utilise la même police
         texte_surface = police_menu.render(bouton['texte'], True, (0, 0, 0))
 
     texte_rect = texte_surface.get_rect(center=bouton['rect'].center)
@@ -103,10 +103,10 @@ bouton_5_points = creer_bouton(largeur//2 - 100, hauteur//2 - 50, 200, 50, "5 Po
 bouton_11_points = creer_bouton(largeur//2 - 100, hauteur//2 + 20, 200, 50, "11 Points")
 bouton_21_points = creer_bouton(largeur//2 - 100, hauteur//2 + 90, 200, 50, "21 Points")
 bouton_start = creer_bouton(largeur//2 - 100, hauteur//2 + 180, 200, 60, "START", (100, 200, 100), (50, 150, 50))
-bouton_commandes = creer_bouton(largeur//2 - 75, int(hauteur * 0.9), 150, 35, "COMMANDES")
-bouton_quitter = creer_bouton(largeur - 160, hauteur - 70, 140, 40, "QUITTER", couleur=(200, 80, 80), couleur_survol=(150, 50, 50))
+bouton_commandes = creer_bouton(largeur//2 - 125, int(hauteur * 0.9), 250, 50, "COMMANDES")
+bouton_quitter = creer_bouton(largeur - 200, hauteur - 80, 180, 60, "QUITTER", couleur=(200, 80, 80), couleur_survol=(150, 50, 50))
 bouton_boutique = creer_bouton(largeur//2 - 100, hauteur//2 + 330, 200, 50, "BOUTIQUE", (100, 150, 255), (50, 100, 200))
-bouton_pause = creer_bouton(largeur - 60, 20, 40, 40, "⏸", (200, 200, 200), (170, 170, 170))
+bouton_pause = creer_bouton(largeur - 80, 20, 60, 60, "⏸", (200, 0, 0), (255, 50, 50))
 bouton_solo = creer_bouton(largeur//2 - 100, hauteur//2 + 260, 200, 50, "SOLO", (100, 200, 250), (50, 150, 200))
 
  
@@ -263,7 +263,7 @@ horloge = pygame.time.Clock()
 
 def afficher_menu_pause():
     en_pause = True
-    bouton_reprendre = creer_bouton(largeur//2 - 100, hauteur//2 - 50, 200, 50, "REPRENDRE", (100, 200, 100), (50, 150, 50))
+    bouton_reprendre = creer_bouton(largeur//2 - 125, hauteur//2 - 50, 250, 50, "REPRENDRE", (100, 200, 100), (50, 150, 50))
     bouton_quit_pause = creer_bouton(largeur//2 - 100, hauteur//2 + 20, 200, 50, "ACCUEIL", (200, 100, 100), (150, 50, 50))
 
     while en_pause:
@@ -276,8 +276,8 @@ def afficher_menu_pause():
         dessiner_bouton(bouton_quit_pause, mon_ecran)
         pygame.display.flip()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        for evenement in pygame.event.get():
+            if evenement.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
@@ -285,12 +285,12 @@ def afficher_menu_pause():
             verifier_survol_bouton(bouton_reprendre, pos)
             verifier_survol_bouton(bouton_quit_pause, pos)
 
-            if est_bouton_clique(bouton_reprendre, event):
+            if est_bouton_clique(bouton_reprendre, evenement):
                 en_pause = False
                 pygame.display.flip()
                 global faire_decompte
                 faire_decompte = True
-            elif est_bouton_clique(bouton_quit_pause, event):
+            elif est_bouton_clique(bouton_quit_pause, evenement):
                 global etat_actuel
                 etat_actuel = ETAT_ACCUEIL
                 en_pause = False
@@ -324,21 +324,6 @@ def afficher_ecran_accueil():
     dessiner_bouton(bouton_solo, mon_ecran)
 
 
-def dessiner_bouton(bouton, surface):
-    couleur_actuelle = bouton['couleur_survol'] if bouton['est_survole'] else bouton['couleur']
-    pygame.draw.rect(surface, couleur_actuelle, bouton['rect'])
-    pygame.draw.rect(surface, (0, 0, 0), bouton['rect'], 2)
-
-    if bouton['texte'] == "⏸":
-        texte_surface = pygame.font.SysFont('arial', 30).render(bouton['texte'], True, (0, 0, 0))
-    elif bouton['texte'] == "COMMANDES":
-        texte_surface = pygame.font.SysFont('arial', 24).render(bouton['texte'], True, (0, 0, 0))
-    else:
-        texte_surface = police_menu.render(bouton['texte'], True, (0, 0, 0))
-
-    texte_rect = texte_surface.get_rect(center=bouton['rect'].center)
-    surface.blit(texte_surface, texte_rect)
-
 def decompte_reprise():
     for i in range(3, 0, -1):
         afficher_table_jeu()  # Redessine l'état actuel de la partie
@@ -355,7 +340,7 @@ def afficher_table_jeu():
     elif skin_selectionne["fond"] == "nuit":
         couleur_fond = (10, 10, 30)
     elif skin_selectionne["fond"] == "futur":
-        couleur_fond = (20, 20, 40)
+        couleur_fond = (10, 150, 200)  # Couleur bleu "futuriste" plus vive
     else:
         couleur_fond = (0, 100, 0)
     mon_ecran.fill(couleur_fond)
@@ -455,6 +440,9 @@ def afficher_boutique():
     vitesse_scroll = 20
     article_en_apercu = None
     articles_achetes = set([k + "_" + v for k, v in skin_selectionne.items()])
+    
+    # Liste des rectangles pour chaque article (pour faciliter la détection des clics)
+    rectangles_articles = []
 
     def dessiner_article(surface, article, x, y):
         rect = pygame.Rect(x, y, largeur_carte, hauteur_carte)
@@ -483,27 +471,52 @@ def afficher_boutique():
             couleur = {"laser": (255, 0, 255), "feu": (255, 100, 0), "pixel": (100, 255, 100)}.get(valeur, BLANC)
             pygame.draw.rect(mon_ecran, couleur, (apercu_rect.centerx - 5, apercu_rect.y + 100, 10, 50))
         elif article["type"] == "fond":
-            couleur = {"bleu": (0, 0, 80), "nuit": (10, 10, 30), "futur": (10, 255, 255)}.get(valeur, (0, 100, 0))
+            couleur = {"bleu": (0, 0, 80), "nuit": (10, 10, 30), "futur": (10, 150, 200)}.get(valeur, (0, 100, 0))
             pygame.draw.rect(mon_ecran, couleur, (apercu_rect.x + 200, apercu_rect.y + 120, 60, 30))
         elif article["type"] == "style":
             texte = {"neon": "Effet néon !", "cartoon": "Look cartoon !"}.get(valeur, "Style spécial")
             retro_txt = ma_police.render(texte, True, (180, 180, 180))
             mon_ecran.blit(retro_txt, (apercu_rect.x + 10, apercu_rect.y + 100))
-
+    
+    # Approche simple - utiliser des articles fixes
+    carte_x = largeur // 2 - largeur_carte // 2  # Position X fixe pour tous les articles
+    
     afficher = True
     while afficher:
         mon_ecran.fill((25, 25, 60))
         mon_ecran.blit(police_titre.render("BOUTIQUE", True, BLANC), (largeur // 2 - 150, 50))
         mon_ecran.blit(ma_police.render(f"Monnaie: {monnaie} €", True, (255, 255, 0)), (largeur - 240, 20))
-
-        surface_articles = pygame.Surface((largeur, len(articles) * (hauteur_carte + espacement)), pygame.SRCALPHA)
-        surface_articles.fill((0, 0, 0, 0))
+        
+        # Recalculer les rectangles à chaque frame pour le scrolling
+        rectangles_articles = []
+        
+        # Afficher directement les articles (sans surface intermédiaire)
         for i, article in enumerate(articles):
-            x = largeur // 2 - largeur_carte // 2
-            y = start_y + i * (hauteur_carte + espacement) + scroll_y
-            dessiner_article(surface_articles, article, x, y)
-
-        mon_ecran.blit(surface_articles, (0, start_y), area=pygame.Rect(0, -scroll_y, largeur, hauteur - start_y - 50))
+            # Position à l'écran de l'article (avec scroll)
+            y_ecran = start_y + (i * (hauteur_carte + espacement)) + scroll_y
+            
+            # Vérifier si l'article est visible à l'écran
+            if start_y - hauteur_carte <= y_ecran <= hauteur:
+                # Dessiner l'article directement sur l'écran
+                rect = pygame.Rect(carte_x, y_ecran, largeur_carte, hauteur_carte)
+                # Stocker le rectangle et l'article pour la détection des clics
+                rectangles_articles.append((rect, article))
+                
+                pygame.draw.rect(mon_ecran, (50, 50, 120), rect)
+                pygame.draw.rect(mon_ecran, BLANC, rect, 3)
+                
+                nom = ma_police.render(article["nom"], True, BLANC)
+                prix = ma_police.render(f"Prix: {article['prix']} €", True, (255, 215, 0))
+                mon_ecran.blit(nom, (carte_x + 10, y_ecran + 10))
+                mon_ecran.blit(prix, (carte_x + 10, y_ecran + 50))
+                
+                if skin_selectionne[article["type"]] == article["valeur"]:
+                    check = ma_police.render("Équipé", True, (0, 255, 0))
+                    mon_ecran.blit(check, (carte_x + largeur_carte - 110, y_ecran + 35))
+                
+                # Afficher l'index à des fins de débogage (à supprimer pour la production)
+                index_txt = ma_police.render(f"{i}", True, (255, 255, 0))
+                mon_ecran.blit(index_txt, (carte_x - 30, y_ecran + 50))
 
         if article_en_apercu:
             dessiner_apercu(article_en_apercu)
@@ -513,32 +526,26 @@ def afficher_boutique():
 
         pygame.display.flip()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        for evenement in pygame.event.get():
+            if evenement.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.KEYDOWN:
+            elif evenement.type == pygame.KEYDOWN:
                 afficher = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 4:
+            elif evenement.type == pygame.MOUSEBUTTONDOWN:
+                if evenement.button == 4:  # Scroll vers le haut
                     scroll_y = min(scroll_y + vitesse_scroll, 0)
-                elif event.button == 5:
+                elif evenement.button == 5:  # Scroll vers le bas
                     max_scroll = -(len(articles) * (hauteur_carte + espacement) - (hauteur - start_y - 50))
                     scroll_y = max(scroll_y - vitesse_scroll, max_scroll)
                 else:
-                    for i, article in enumerate(articles):
-                        x = largeur // 2 - largeur_carte // 2
-                        y = start_y + i * (hauteur_carte + espacement)
-
-                        rect = pygame.Rect(x, y, largeur_carte, hauteur_carte)  # Ne PAS ajouter scroll_y ici
-
-                        clic_x, clic_y = event.pos
-                        clic_y_adj = clic_y - scroll_y  # On ajuste le clic selon le scroll
-
-                        if rect.collidepoint(clic_x, clic_y_adj):
-                            if event.button == 3:
+                    # Vérification directe des clics sur les rectangles
+                    mouse_pos = evenement.pos
+                    for rect, article in rectangles_articles:
+                        if rect.collidepoint(mouse_pos):
+                            if evenement.button == 3:  # Clic droit
                                 article_en_apercu = article
-                            elif event.button == 1:
+                            elif evenement.button == 1:  # Clic gauche
                                 type_article = article["type"]
                                 valeur_article = article["valeur"]
                                 identifiant = f"{type_article}_{valeur_article}"
@@ -558,23 +565,16 @@ def afficher_boutique():
                                     son_achat.play()
                                 else:
                                     son_erreur.play()
+                            break  # Sortir de la boucle dès qu'un article est cliqué
 
- 
-
-        info_sortie = ma_police.render("Clique droit: aperçu | Touche pour quitter", True, GRIS)
-        mon_ecran.blit(info_sortie, info_sortie.get_rect(center=(largeur // 2, hauteur - 40)))
-
-        pygame.display.flip()
-
-        
 def afficher_commandes():
     afficher = True
     while afficher:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        for evenement in pygame.event.get():
+            if evenement.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+            elif evenement.type == pygame.KEYDOWN or evenement.type == pygame.MOUSEBUTTONDOWN:
                 afficher = False  # Quitter la page avec un clic ou une touche
 
         mon_ecran.fill(NOIR)
@@ -635,13 +635,8 @@ while True:
         decompte_reprise()
         faire_decompte = False
     elif etat_actuel == ETAT_JEU:
-        if skin_selectionne["fond"] == "bleu":
-            couleur_fond = (0, 0, 80)
-        else:
-            couleur_fond = (0, 100, 0)
-        mon_ecran.fill(couleur_fond)
-
-        mon_ecran.fill(couleur_fond)
+        # Utilisons la fonction afficher_table_jeu qui gère déjà correctement tous les skins
+        afficher_table_jeu()
 
         # Déplacement des raquettes
         if mouv_haut_g and raq_g_y > 0:
@@ -660,7 +655,49 @@ while True:
                 raq_d_y += pas_raquette_droite
 
         
-        # Affichage du bouton pause
+        # Affichage
+        afficher_table_jeu()  # Appel de la fonction qui gère correctement tous les skins
+        
+        if bonus and bonus['actif']:
+            # Utiliser l'image du bonus au lieu d'un simple cercle
+            sprite = sprites_bonus[bonus['indice_sprite']]
+            sprite_rect = sprite.get_rect(center=(int(bonus['x']), int(bonus['y'])))
+            mon_ecran.blit(sprite, sprite_rect)
+
+        # Affichage du score
+        texte_score = ma_police.render(f"{score_gauche} - {score_droite}", True,
+                                      (255, 255, 255))
+        mon_ecran.blit(texte_score, (largeur // 2 - texte_score.get_width() // 2, 20))
+        
+        # Affichage du nombre de points max
+        texte_points_max = ma_police.render(f"Objectif: {points_max} points", True, (200, 200, 200))
+        mon_ecran.blit(texte_points_max, (largeur // 2 - texte_points_max.get_width() // 2, hauteur - 30))
+        
+        # Affichage du serveur actuel
+        if serveur_actuel == 'gauche':
+            texte_serveur = ma_police.render("Service", True, (255, 200, 0))
+            mon_ecran.blit(texte_serveur, (20, hauteur - 40))
+        else:
+            texte_serveur = ma_police.render("Service", True, (255, 200, 0))
+            mon_ecran.blit(texte_serveur, (largeur - texte_serveur.get_width() - 20, hauteur - 40))
+        
+        # Affichage du nom du bonus actif
+        if bonus_actif_joueur:
+            nom_bonus = ""
+            if force_x2_actif:
+                nom_bonus = "Force x2"
+            elif bonus and bonus['type'] == 'ralentir adversaire':
+                nom_bonus = "Ralentir adversaire"
+            elif bonus and bonus['type'] == 'taille':
+                nom_bonus = "Grande raquette"
+                
+            texte_bonus = ma_police.render(nom_bonus, True, (255, 255, 0))
+            if bonus_actif_joueur == 'gauche':
+                mon_ecran.blit(texte_bonus, (largeur // 4 - texte_bonus.get_width() // 2, 20))
+            else:
+                mon_ecran.blit(texte_bonus, (3 * largeur // 4 - texte_bonus.get_width() // 2, 20))
+                
+        # Affichage du bouton pause (à la fin pour être sûr qu'il soit visible)
         dessiner_bouton(bouton_pause, mon_ecran)
 
         # Gestion des bonus
@@ -802,69 +839,9 @@ while True:
             else:
                 reinitialiser_jeu()
 
-
-        # Affichage
-        pygame.draw.line(mon_ecran, (255, 255, 255), (largeur // 2, 0),(largeur // 2, hauteur), 2)
-        pygame.draw.rect(mon_ecran, (255, 255, 255), (0, 0, largeur, hauteur), 5)
-        if skin_selectionne["raquette"] == " raquette laser":
-            pygame.draw.rect(mon_ecran, (255, 0, 255), (raq_g_x, raq_g_y, l_g, h_g))  # rose fluo
-            pygame.draw.rect(mon_ecran, (0, 255, 255), (raq_d_x, raq_d_y, l_d, h_d))  # cyan
-        else:
-            pygame.draw.rect(mon_ecran, (200, 100, 100), (raq_g_x, raq_g_y, l_g, h_g))  # rouge pastel
-            pygame.draw.rect(mon_ecran, (100, 100, 200), (raq_d_x, raq_d_y, l_d, h_d))  # bleu pastel
-
-        # Dessin de la balle selon le skin
-        if skin_selectionne["balle"] == "balle flamme":
-        # Balle rouge-orangé avec effet de halo
-            pygame.draw.circle(mon_ecran, (255, 140, 0), (int(pos_x), int(pos_y)), rayon + 3)
-            pygame.draw.circle(mon_ecran, (255, 69, 0), (int(pos_x), int(pos_y)), rayon)
-            pygame.draw.circle(mon_ecran, (255, 255, 0), (int(pos_x), int(pos_y)), rayon // 2)
-        else:
-            pygame.draw.circle(mon_ecran, (255, 255, 255), (int(pos_x), int(pos_y)), rayon)
-
-
-        if bonus and bonus['actif']:
-            # Utiliser l'image du bonus au lieu d'un simple cercle
-            sprite = sprites_bonus[bonus['indice_sprite']]
-            sprite_rect = sprite.get_rect(center=(int(bonus['x']), int(bonus['y'])))
-            mon_ecran.blit(sprite, sprite_rect)
-
-        # Affichage du score
-        texte_score = ma_police.render(f"{score_gauche} - {score_droite}", True,
-                                      (255, 255, 255))
-        mon_ecran.blit(texte_score, (largeur // 2 - texte_score.get_width() // 2, 20))
-        
-        # Affichage du nombre de points max
-        texte_points_max = ma_police.render(f"Objectif: {points_max} points", True, (200, 200, 200))
-        mon_ecran.blit(texte_points_max, (largeur // 2 - texte_points_max.get_width() // 2, hauteur - 30))
-        
-        # Affichage du serveur actuel
-        if serveur_actuel == 'gauche':
-            texte_serveur = ma_police.render("Service", True, (255, 200, 0))
-            mon_ecran.blit(texte_serveur, (20, hauteur - 40))
-        else:
-            texte_serveur = ma_police.render("Service", True, (255, 200, 0))
-            mon_ecran.blit(texte_serveur, (largeur - texte_serveur.get_width() - 20, hauteur - 40))
-        
-        # Affichage du nom du bonus actif
-        if bonus_actif_joueur:
-            nom_bonus = ""
-            if force_x2_actif:
-                nom_bonus = "Force x2"
-            elif bonus and bonus['type'] == 'ralentir adversaire':
-                nom_bonus = "Ralentir adversaire"
-            elif bonus and bonus['type'] == 'taille':
-                nom_bonus = "Grande raquette"
-                
-            texte_bonus = ma_police.render(nom_bonus, True, (255, 255, 0))
-            if bonus_actif_joueur == 'gauche':
-                mon_ecran.blit(texte_bonus, (largeur // 4 - texte_bonus.get_width() // 2, 20))
-            else:
-                mon_ecran.blit(texte_bonus, (3 * largeur // 4 - texte_bonus.get_width() // 2, 20))
-    
     # Gestion des événements
     for evenement in pygame.event.get():
-        if evenement.type == QUIT:
+        if evenement.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
             
@@ -900,8 +877,6 @@ while True:
                 sys.exit()
             elif est_bouton_clique(bouton_boutique, evenement):
                 afficher_boutique()
-            elif est_bouton_clique(bouton_pause, evenement):
-                afficher_menu_pause()
             elif est_bouton_clique(bouton_solo, evenement):
                 mode_solo = True
                 etat_actuel = ETAT_JEU
