@@ -17,7 +17,7 @@ Un jeu de ping pong dynamique avec bonus et système de service, développé ave
 - Rebond des balles avec accélération progressive
 
 ### Système de bonus
-Trois types de bonus apparaissent aléatoirement sur la table:
+Plusieurs bonus peuvent apparaître simultanément sur la table et se déplacer dans différentes directions:
 
 1. **Force x2** (premier sprite)
    - Accélère la balle lors de la prochaine frappe
@@ -30,6 +30,10 @@ Trois types de bonus apparaissent aléatoirement sur la table:
 3. **Grande raquette** (troisième sprite)
    - Augmente la taille de votre raquette de 50%
    - Durée: 15 secondes
+
+4. **Multi-balle** (quatrième sprite)
+   - Génère jusqu'à deux balles supplémentaires
+   - Les balles supplémentaires restent en jeu jusqu'à ce qu'un point soit marqué
 
 ### Affichage du score
 - Score central en haut de l'écran
@@ -53,5 +57,5 @@ pingpong/
 ├── src/
 │   ├── main.py      # Code principal du jeu
 │   └── assets/
-│       └── bonus.png # Image contenant les 3 sprites de bonus
+│       └── bonus.png # Image contenant les sprites de bonus
 ``` 

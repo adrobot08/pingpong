@@ -33,15 +33,26 @@ son_erreur = pygame.mixer.Sound("src/assets/son_erreur.wav")
 
 # Chargement de l'image de bonus
 image_bonus = pygame.image.load('src/assets/bonus.png')
-# L'image contient 3 bonus côte à côte, on va la découper en 3 parties
-largeur_bonus = image_bonus.get_width() // 3
+# L'image contient 4 bonus côte à côte
+largeur_bonus = image_bonus.get_width() // 4
 sprites_bonus = [
     image_bonus.subsurface((i * largeur_bonus, 0, largeur_bonus, image_bonus.get_height()))
-    for i in range(3)
+    for i in range(4)
 ]
 # Redimensionnement des sprites de bonus
 for i in range(len(sprites_bonus)):
     sprites_bonus[i] = pygame.transform.scale(sprites_bonus[i], (70, 50))
+
+# Liste pour stocker plusieurs bonus actifs
+bonus_actifs = []
+# Temps minimum entre deux générations de bonus (en frames)
+delai_entre_bonus = 60  # environ 1 seconde à 60 FPS (au lieu de 2 secondes)
+compteur_delai_bonus = 0
+max_bonus_simultanes = 4  # Maximum de bonus qui peuvent être présents simultanément
+
+# Variables pour la multi-balle
+multi_balles = []
+max_multi_balles = 2  # Nombre maximum de balles supplémentaires simultanées
 
 # États du jeu
 ETAT_ACCUEIL = 0
@@ -120,11 +131,12 @@ bouton_accueil = creer_bouton(largeur//2 + 20, hauteur//2 + 100, 200, 60, "ACCUE
 
 def creer_bonus():
     """Crée et retourne un dictionnaire représentant un bonus"""
-    type_bonus = choice(['vitesse', 'ralentir adversaire', 'taille'])
+    # Ajout du type multi-balle aux types possibles
+    type_bonus = choice(['vitesse', 'ralentir adversaire', 'taille', 'multi-balle'])
     
     # Angle aléatoire pour le déplacement (en radians), mais avec un angle maximal limité
-    # On limite l'angle entre -45° et 45° (±π/4 radians) par rapport à l'horizontale
-    angle = uniform(-pi/4, pi/4)
+    # On permet désormais des angles plus variés
+    angle = uniform(-pi/3, pi/3)  # Entre -60° et 60° au lieu de -45° et 45°
     
     # On choisit aléatoirement une direction horizontale (gauche ou droite)
     direction_horizontale = choice([-1, 1])
@@ -136,6 +148,9 @@ def creer_bonus():
     magnitude = (direction[0]**2 + direction[1]**2)**0.5
     direction = [direction[0]/magnitude, direction[1]/magnitude]
     
+    # Vitesse aléatoire pour plus de diversité
+    vitesse_bonus = uniform(2.5, 4.5)  # Entre 2.5 et 4.5 au lieu de fixe à 3
+    
     # Sélection du sprite selon le type de bonus
     indice_sprite = 0  # Par défaut (Force x2)
     if type_bonus == 'vitesse':
@@ -144,26 +159,55 @@ def creer_bonus():
         indice_sprite = 1  # Ralentir
     elif type_bonus == 'taille':
         indice_sprite = 2  # Grande raquette
+    elif type_bonus == 'multi-balle':
+        indice_sprite = 3  # Multi-balle (sprite dédié)
     
     return {
         'type': type_bonus,
-        'x': randint(50, largeur - 50),
+        'x': randint(largeur//4, 3*largeur//4),  # Positionnement plus au centre du terrain
         'y': randint(50, hauteur - 50),
         'rayon': 15,
         'actif': True,
         'dernier_touche': None,  # Pour suivre quelle raquette a touché le bonus
         'direction': direction,
-        'vitesse': 3,
-        'indice_sprite': indice_sprite
+        'vitesse': vitesse_bonus,
+        'indice_sprite': indice_sprite,
+        'compteur': 0,  # Compteur individuel pour chaque bonus
+        'duree': 0,     # Durée de l'effet (sera définie lors de l'activation)
+        'joueur': None, # Joueur qui bénéficie de l'effet
+    }
+
+def creer_multi_balle():
+    """Crée une balle supplémentaire avec des propriétés aléatoires"""
+    # Angle aléatoire pour le déplacement
+    angle = uniform(0, 2*pi)
+    
+    # Direction de déplacement
+    sens_x = cos(angle)
+    sens_y = sin(angle)
+    
+    # Normalisation
+    magnitude = (sens_x**2 + sens_y**2)**0.5
+    sens_x /= magnitude
+    sens_y /= magnitude
+    
+    return {
+        'pos_x': largeur // 2,
+        'pos_y': hauteur // 2,
+        'sens': [sens_x, sens_y],
+        'rayon': rayon,
+        'vitesse': uniform(0.8, 1.2) * pas,  # Vitesse légèrement variée
+        'duree': 15 * 60,  # 15 secondes à 60 FPS
+        'couleur': (randint(150, 255), randint(150, 255), randint(150, 255))  # Couleur aléatoire
     }
 
 def reinitialiser_jeu():
     global pos_x, pos_y, sens, rayon, pas, pas_raquette, vitesse
     global raq_g_y, raq_d_y, partie_terminee, gagnant
-    global score_gauche, score_droite, bonus, compteur_bonus
+    global score_gauche, score_droite, bonus_actifs, compteur_delai_bonus
     global pas_raquette_gauche, pas_raquette_droite, bonus_actif_joueur, force_x2_actif
     global serveur_actuel, services_restants, changement_service
-    global h_g, h_d
+    global h_g, h_d, multi_balles
 
     # Réinitialisation des bonus et de leurs effets
     # Restaurer la vitesse de déplacement des raquettes à leur valeur par défaut
@@ -175,10 +219,13 @@ def reinitialiser_jeu():
     h_d = 100
     
     # Annuler tous les bonus actifs
-    bonus = None
-    compteur_bonus = 0
+    bonus_actifs = []
+    compteur_delai_bonus = 0
     bonus_actif_joueur = None
     force_x2_actif = None
+
+    # Vider les multi-balles
+    multi_balles = []
 
     pos_x = largeur // 2
     pos_y = hauteur // 2
@@ -378,11 +425,17 @@ def afficher_table_jeu():
         pygame.draw.circle(mon_ecran, (180, 220, 255), (int(pos_x), int(pos_y)), rayon - 3)
     else:
         pygame.draw.circle(mon_ecran, BLANC, (int(pos_x), int(pos_y)), rayon)
+        
+    # Dessiner les multi-balles
+    for balle in multi_balles:
+        pygame.draw.circle(mon_ecran, balle['couleur'], (int(balle['pos_x']), int(balle['pos_y'])), balle['rayon'])
 
-    if bonus and bonus['actif']:
-        sprite = sprites_bonus[bonus['indice_sprite']]
-        sprite_rect = sprite.get_rect(center=(int(bonus['x']), int(bonus['y'])))
-        mon_ecran.blit(sprite, sprite_rect)
+    # Afficher tous les bonus actifs
+    for bonus in bonus_actifs:
+        if bonus['actif']:
+            sprite = sprites_bonus[bonus['indice_sprite']]
+            sprite_rect = sprite.get_rect(center=(int(bonus['x']), int(bonus['y'])))
+            mon_ecran.blit(sprite, sprite_rect)
 
     # Score
     texte_score = ma_police.render(f"{score_gauche} - {score_droite}", True, BLANC)
@@ -399,23 +452,50 @@ def afficher_table_jeu():
     else:
         mon_ecran.blit(texte_serveur, (largeur - texte_serveur.get_width() - 20, hauteur - 40))
 
-    # Bonus actif
-    if bonus_actif_joueur:
-        nom_bonus = ""
-        if force_x2_actif:
-            nom_bonus = "Force x2"
-        elif bonus and bonus['type'] == 'ralentir adversaire':
-            nom_bonus = "Ralentir adversaire"
-        elif bonus and bonus['type'] == 'taille':
-            nom_bonus = "Grande raquette"
-
-        texte_bonus = ma_police.render(nom_bonus, True, (255, 255, 0))
-        if bonus_actif_joueur == 'gauche':
-            mon_ecran.blit(texte_bonus, (largeur // 4 - texte_bonus.get_width() // 2, 20))
-        else:
-            mon_ecran.blit(texte_bonus, (3 * largeur // 4 - texte_bonus.get_width() // 2, 20))
-
+    # Bonus actifs pour chaque joueur
+    bonus_gauche = [b for b in bonus_actifs if not b['actif'] and b['joueur'] == 'gauche' and b['compteur'] > 0]
+    bonus_droite = [b for b in bonus_actifs if not b['actif'] and b['joueur'] == 'droite' and b['compteur'] > 0]
     
+    # Affichage des bonus actifs pour le joueur gauche
+    y_offset = 20
+    for bonus in bonus_gauche:
+        nom_bonus = ""
+        if bonus['type'] == 'vitesse' and force_x2_actif == 'gauche':
+            nom_bonus = "Force x2"
+        elif bonus['type'] == 'ralentir adversaire':
+            nom_bonus = "Ralentir adversaire"
+        elif bonus['type'] == 'taille':
+            nom_bonus = "Grande raquette"
+        elif bonus['type'] == 'multi-balle':
+            nom_bonus = "Multi-balle"
+            
+        if nom_bonus:
+            texte_bonus = ma_police.render(nom_bonus, True, (255, 255, 0))
+            mon_ecran.blit(texte_bonus, (largeur // 4 - texte_bonus.get_width() // 2, y_offset))
+            y_offset += 30
+    
+    # Affichage des bonus actifs pour le joueur droit
+    y_offset = 20
+    for bonus in bonus_droite:
+        nom_bonus = ""
+        if bonus['type'] == 'vitesse' and force_x2_actif == 'droite':
+            nom_bonus = "Force x2"
+        elif bonus['type'] == 'ralentir adversaire':
+            nom_bonus = "Ralentir adversaire"
+        elif bonus['type'] == 'taille':
+            nom_bonus = "Grande raquette"
+        elif bonus['type'] == 'multi-balle':
+            nom_bonus = "Multi-balle"
+            
+        if nom_bonus:
+            texte_bonus = ma_police.render(nom_bonus, True, (255, 255, 0))
+            mon_ecran.blit(texte_bonus, (3 * largeur // 4 - texte_bonus.get_width() // 2, y_offset))
+            y_offset += 30
+    
+    # Afficher le nombre de balles en jeu
+    if len(multi_balles) > 0:
+        texte_balles = ma_police.render(f"Balles: {len(multi_balles) + 1}", True, (255, 200, 100))
+        mon_ecran.blit(texte_balles, (largeur // 2 - texte_balles.get_width() // 2, 60))
 
 def afficher_boutique():
     global skin_selectionne, monnaie
@@ -671,130 +751,173 @@ while True:
 
         
         # Affichage
-        afficher_table_jeu()  # Appel de la fonction qui gère correctement tous les skins
+        afficher_table_jeu()
         
-        if bonus and bonus['actif']:
-            # Utiliser l'image du bonus au lieu d'un simple cercle
-            sprite = sprites_bonus[bonus['indice_sprite']]
-            sprite_rect = sprite.get_rect(center=(int(bonus['x']), int(bonus['y'])))
-            mon_ecran.blit(sprite, sprite_rect)
-
-        # Affichage du score
-        texte_score = ma_police.render(f"{score_gauche} - {score_droite}", True,
-                                      (255, 255, 255))
-        mon_ecran.blit(texte_score, (largeur // 2 - texte_score.get_width() // 2, 20))
-        
-        # Affichage du nombre de points max
-        texte_points_max = ma_police.render(f"Objectif: {points_max} points", True, (200, 200, 200))
-        mon_ecran.blit(texte_points_max, (largeur // 2 - texte_points_max.get_width() // 2, hauteur - 30))
-        
-        # Affichage du serveur actuel
-        if serveur_actuel == 'gauche':
-            texte_serveur = ma_police.render("Service", True, (255, 200, 0))
-            mon_ecran.blit(texte_serveur, (20, hauteur - 40))
-        else:
-            texte_serveur = ma_police.render("Service", True, (255, 200, 0))
-            mon_ecran.blit(texte_serveur, (largeur - texte_serveur.get_width() - 20, hauteur - 40))
-        
-        # Affichage du nom du bonus actif
-        if bonus_actif_joueur:
-            nom_bonus = ""
-            if force_x2_actif:
-                nom_bonus = "Force x2"
-            elif bonus and bonus['type'] == 'ralentir adversaire':
-                nom_bonus = "Ralentir adversaire"
-            elif bonus and bonus['type'] == 'taille':
-                nom_bonus = "Grande raquette"
-                
-            texte_bonus = ma_police.render(nom_bonus, True, (255, 255, 0))
-            if bonus_actif_joueur == 'gauche':
-                mon_ecran.blit(texte_bonus, (largeur // 4 - texte_bonus.get_width() // 2, 20))
-            else:
-                mon_ecran.blit(texte_bonus, (3 * largeur // 4 - texte_bonus.get_width() // 2, 20))
-                
-        # Affichage du bouton pause (à la fin pour être sûr qu'il soit visible)
+        # Bouton pause
         dessiner_bouton(bouton_pause, mon_ecran)
 
-        # Gestion des bonus
-        if bonus is None and randint(0, 200) == 0:  # Chance d'apparition d'un bonus
-            bonus = creer_bonus()
-
-        if bonus and bonus['actif']:
-            # Déplacement du bonus
-            bonus['x'] += bonus['direction'][0] * bonus['vitesse']
-            bonus['y'] += bonus['direction'][1] * bonus['vitesse']
-            
-            # Rebond sur les bords
-            if bonus['x'] - bonus['rayon'] <= 0 or bonus['x'] + bonus['rayon'] >= largeur:
-                bonus['direction'][0] *= -1
-            if bonus['y'] - bonus['rayon'] <= 0 or bonus['y'] + bonus['rayon'] >= hauteur:
-                bonus['direction'][1] *= -1
-            
-            # Collision avec les raquettes gauche
-            if (raq_g_x <= bonus['x'] - bonus['rayon'] <= raq_g_x + l_g and 
-                raq_g_y <= bonus['y'] <= raq_g_y + h_g):
-                bonus['actif'] = False
-                bonus['dernier_touche'] = 'gauche'
+        # Gestion des bonus - possibilité d'avoir plusieurs bonus
+        compteur_delai_bonus -= 1 if compteur_delai_bonus > 0 else 0
+        
+        # Probabilité d'apparition d'un nouveau bonus
+        if compteur_delai_bonus <= 0 and randint(0, 100) < 8 and len(bonus_actifs) < max_bonus_simultanes:  # 8% de chance au lieu de 5%
+            bonus_actifs.append(creer_bonus())
+            compteur_delai_bonus = delai_entre_bonus - randint(0, 30)  # Plus de variation aléatoire
+        
+        # Mise à jour de tous les bonus actifs
+        bonus_a_supprimer = []
+        
+        for i, bonus in enumerate(bonus_actifs):
+            if bonus['actif']:
+                # Déplacement du bonus
+                bonus['x'] += bonus['direction'][0] * bonus['vitesse']
+                bonus['y'] += bonus['direction'][1] * bonus['vitesse']
                 
-                if bonus['type'] == 'vitesse':
-                    # Force x2 - sera appliqué au prochain coup
-                    force_x2_actif = 'gauche'
-                    # Pas de timer pour ce bonus, il sera désactivé après utilisation
-                    bonus_actif_joueur = 'gauche'
-                elif bonus['type'] == 'ralentir adversaire':
-                    # Ralentir la raquette adverse pendant 5 secondes
-                    # Si la raquette gauche l'attrape, on ralentit la raquette droite
-                    pas_raquette_droite = pas_raquette * 0.6
-                    compteur_bonus = 5 * 60  # 5 secondes à 60 FPS
-                    bonus_actif_joueur = 'gauche'
-                elif bonus['type'] == 'taille':
-                    # Agrandir la raquette pendant 15 secondes
-                    h_g = int(h_g * 1.5)
-                    compteur_bonus = 15 * 60  # 15 secondes à 60 FPS
-                    bonus_actif_joueur = 'gauche'
-            
-            # Collision avec les raquettes droite
-            elif (raq_d_x <= bonus['x'] + bonus['rayon'] <= raq_d_x + l_d and 
-                  raq_d_y <= bonus['y'] <= raq_d_y + h_d):
-                bonus['actif'] = False
-                bonus['dernier_touche'] = 'droite'
+                # Rebond sur les bords
+                if bonus['x'] - bonus['rayon'] <= 0 or bonus['x'] + bonus['rayon'] >= largeur:
+                    bonus['direction'][0] *= -1
+                if bonus['y'] - bonus['rayon'] <= 0 or bonus['y'] + bonus['rayon'] >= hauteur:
+                    bonus['direction'][1] *= -1
                 
-                if bonus['type'] == 'vitesse':
-                    # Force x2 - sera appliqué au prochain coup
-                    force_x2_actif = 'droite'
-                    # Pas de timer pour ce bonus, il sera désactivé après utilisation
-                    bonus_actif_joueur = 'droite'
-                elif bonus['type'] == 'ralentir adversaire':
-                    # Ralentir la raquette adverse pendant 5 secondes
-                    # Si la raquette droite l'attrape, on ralentit la raquette gauche
-                    pas_raquette_gauche = pas_raquette * 0.6
-                    compteur_bonus = 5 * 60  # 5 secondes à 60 FPS
-                    bonus_actif_joueur = 'droite'
-                elif bonus['type'] == 'taille':
-                    # Agrandir la raquette pendant 15 secondes
-                    h_d = int(h_d * 1.5)
-                    compteur_bonus = 15 * 60  # 15 secondes à 60 FPS
-                    bonus_actif_joueur = 'droite'
-
-        if compteur_bonus > 0:
-            compteur_bonus -= 1
-            if compteur_bonus == 0:  # Fin du bonus
-                if bonus and bonus['type'] == 'ralentir adversaire':
-                    # Restaurer la vitesse de déplacement des raquettes
-                    pas_raquette_gauche = pas_raquette
-                    pas_raquette_droite = pas_raquette
-                elif bonus and bonus['type'] == 'taille':
-                    # Restaurer la taille des raquettes
-                    if bonus['dernier_touche'] == 'gauche':
-                        h_g = int(h_g / 1.5)
-                    else:
-                        h_d = int(h_d / 1.5)
-                bonus = None
-                bonus_actif_joueur = None
+                # Collision avec la raquette gauche
+                if (raq_g_x <= bonus['x'] - bonus['rayon'] <= raq_g_x + l_g and 
+                    raq_g_y <= bonus['y'] <= raq_g_y + h_g):
+                    bonus['actif'] = False
+                    bonus['joueur'] = 'gauche'
+                    
+                    if bonus['type'] == 'vitesse':
+                        # Force x2 - sera appliqué au prochain coup
+                        force_x2_actif = 'gauche'
+                        # Pas de timer pour ce bonus, il sera désactivé après utilisation
+                    elif bonus['type'] == 'ralentir adversaire':
+                        # Ralentir la raquette adverse pendant 5 secondes
+                        pas_raquette_droite = pas_raquette * 0.6
+                        bonus['compteur'] = 5 * 60  # 5 secondes à 60 FPS
+                        bonus['duree'] = 5 * 60
+                    elif bonus['type'] == 'taille':
+                        # Agrandir la raquette pendant 15 secondes
+                        h_g = int(h_g * 1.5)
+                        bonus['compteur'] = 15 * 60  # 15 secondes à 60 FPS
+                        bonus['duree'] = 15 * 60
+                    elif bonus['type'] == 'multi-balle' and len(multi_balles) < max_multi_balles:
+                        # Ajouter une balle supplémentaire si on n'a pas atteint le maximum
+                        nouvelle_balle = creer_multi_balle()
+                        multi_balles.append(nouvelle_balle)
+                        # Ajouter un effet visuel - un cercle qui s'agrandit rapidement autour de la nouvelle balle
+                        for r in range(5, 30, 5):
+                            pygame.draw.circle(mon_ecran, nouvelle_balle['couleur'], 
+                                              (int(nouvelle_balle['pos_x']), int(nouvelle_balle['pos_y'])), r, 2)
+                            pygame.display.flip()
+                            pygame.time.delay(30)
+                        bonus['compteur'] = 3 * 60  # 3 secondes de délai avant de pouvoir réutiliser
+                        bonus['duree'] = 3 * 60
+                
+                # Collision avec la raquette droite
+                elif (raq_d_x <= bonus['x'] + bonus['rayon'] <= raq_d_x + l_d and 
+                      raq_d_y <= bonus['y'] <= raq_d_y + h_d):
+                    bonus['actif'] = False
+                    bonus['joueur'] = 'droite'
+                    
+                    if bonus['type'] == 'vitesse':
+                        # Force x2 - sera appliqué au prochain coup
+                        force_x2_actif = 'droite'
+                        # Pas de timer pour ce bonus, il sera désactivé après utilisation
+                    elif bonus['type'] == 'ralentir adversaire':
+                        # Ralentir la raquette adverse pendant 5 secondes
+                        pas_raquette_gauche = pas_raquette * 0.6
+                        bonus['compteur'] = 5 * 60  # 5 secondes à 60 FPS
+                        bonus['duree'] = 5 * 60
+                    elif bonus['type'] == 'taille':
+                        # Agrandir la raquette pendant 15 secondes
+                        h_d = int(h_d * 1.5)
+                        bonus['compteur'] = 15 * 60  # 15 secondes à 60 FPS
+                        bonus['duree'] = 15 * 60
+                    elif bonus['type'] == 'multi-balle' and len(multi_balles) < max_multi_balles:
+                        # Ajouter une balle supplémentaire si on n'a pas atteint le maximum
+                        nouvelle_balle = creer_multi_balle()
+                        multi_balles.append(nouvelle_balle)
+                        # Ajouter un effet visuel - un cercle qui s'agrandit rapidement autour de la nouvelle balle
+                        for r in range(5, 30, 5):
+                            pygame.draw.circle(mon_ecran, nouvelle_balle['couleur'], 
+                                              (int(nouvelle_balle['pos_x']), int(nouvelle_balle['pos_y'])), r, 2)
+                            pygame.display.flip()
+                            pygame.time.delay(30)
+                        bonus['compteur'] = 3 * 60  # 3 secondes de délai avant de pouvoir réutiliser
+                        bonus['duree'] = 3 * 60
+            else:
+                # Si le bonus est capturé et a un effet temporel, décompter sa durée
+                if bonus['compteur'] > 0:
+                    bonus['compteur'] -= 1
+                    
+                    # L'effet du bonus est terminé
+                    if bonus['compteur'] <= 0:
+                        if bonus['type'] == 'ralentir adversaire':
+                            if bonus['joueur'] == 'gauche':
+                                pas_raquette_droite = pas_raquette
+                            else:
+                                pas_raquette_gauche = pas_raquette
+                        elif bonus['type'] == 'taille':
+                            if bonus['joueur'] == 'gauche':
+                                h_g = int(h_g / 1.5)
+                            else:
+                                h_d = int(h_d / 1.5)
+                        
+                        # Marquer ce bonus pour suppression
+                        bonus_a_supprimer.append(i)
+                else:
+                    # Si le bonus est utilisé (comme Force x2) et n'a plus d'effet actif
+                    if bonus['type'] == 'vitesse' and force_x2_actif != bonus['joueur']:
+                        bonus_a_supprimer.append(i)
+        
+        # Supprimer les bonus terminés (en parcourant la liste en ordre décroissant)
+        for i in sorted(bonus_a_supprimer, reverse=True):
+            del bonus_actifs[i]
 
         # Déplacement de la balle
         pos_x += pas * sens[0] * vitesse
         pos_y += pas * sens[1] * vitesse
+        
+        # Déplacement et gestion des multi-balles
+        balles_a_supprimer = []
+        for i, balle in enumerate(multi_balles):
+            # Déplacement
+            balle['pos_x'] += balle['vitesse'] * balle['sens'][0]
+            balle['pos_y'] += balle['vitesse'] * balle['sens'][1]
+            
+            # Gestion des rebonds sur les murs
+            if balle['pos_y'] - balle['rayon'] <= 0 or balle['pos_y'] + balle['rayon'] >= hauteur:
+                balle['sens'][1] *= -1
+                
+            # Collision avec les raquettes
+            if (raq_g_x <= balle['pos_x'] - balle['rayon'] <= raq_g_x + l_g and 
+                raq_g_y <= balle['pos_y'] <= raq_g_y + h_g and balle['sens'][0] < 0):
+                balle['sens'][0] *= -1
+            elif (raq_d_x <= balle['pos_x'] + balle['rayon'] <= raq_d_x + l_d and 
+                  raq_d_y <= balle['pos_y'] <= raq_d_y + h_d and balle['sens'][0] > 0):
+                balle['sens'][0] *= -1
+                
+            # Décompte de la durée
+            balle['duree'] -= 1
+            if balle['duree'] <= 0:
+                balles_a_supprimer.append(i)
+            
+            # Points si la balle sort (pas de réinitialisation du jeu)
+            if balle['pos_x'] - balle['rayon'] <= 0:
+                score_droite += 1
+                balles_a_supprimer.append(i)
+                if score_droite >= points_max:
+                    gagnant = "droite"
+                    etat_actuel = ETAT_FIN_PARTIE
+            elif balle['pos_x'] + balle['rayon'] >= largeur:
+                score_gauche += 1
+                balles_a_supprimer.append(i)
+                if score_gauche >= points_max:
+                    gagnant = "gauche"
+                    etat_actuel = ETAT_FIN_PARTIE
+                
+        # Supprimer les balles qui ont expiré ou sont sorties
+        for i in sorted(balles_a_supprimer, reverse=True):
+            del multi_balles[i]
 
         # Collisions avec les raquettes
         if (raq_g_x <= pos_x - rayon <= raq_g_x + l_g
@@ -805,10 +928,6 @@ while True:
                 if force_x2_actif == 'gauche':
                     vitesse *= 2
                     force_x2_actif = None
-                    # Si le joueur a utilisé son bonus Force x2, on le désactive
-                    if bonus_actif_joueur == 'gauche' and (not bonus or bonus['type'] == 'vitesse'):
-                        bonus_actif_joueur = None
-                        bonus = None
                 else:
                     # Si l'adversaire rattrape une balle accélérée par Force x2
                     if vitesse > 1.5:
@@ -823,10 +942,6 @@ while True:
                 if force_x2_actif == 'droite':
                     vitesse *= 2
                     force_x2_actif = None
-                    # Si le joueur a utilisé son bonus Force x2, on le désactive
-                    if bonus_actif_joueur == 'droite' and (not bonus or bonus['type'] == 'vitesse'):
-                        bonus_actif_joueur = None
-                        bonus = None
                 else:
                     # Si l'adversaire rattrape une balle accélérée par Force x2
                     if vitesse > 1.5:
