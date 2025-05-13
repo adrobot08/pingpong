@@ -36,6 +36,10 @@ Trois types de bonus apparaissent aléatoirement sur la table:
 - Affichage des bonus actifs
 - Indication du nombre de points à atteindre
 
+### Système de cagnotte
+- Une cagnotte augmente de 100 euros à chaque nouvelle partie
+- Visible sur les écrans de jeu et de fin de partie
+
 ### Écran de fin de partie
 - Affichage du gagnant
 - Score final

@@ -80,6 +80,9 @@ def dessiner_bouton(bouton, surface):
     # Pour le bouton pause, on garde une police spéciale
     if bouton['texte'] == "⏸":
         texte_surface = pygame.font.SysFont('arial', 30).render(bouton['texte'], True, (0, 0, 0))
+    # Police plus petite pour le bouton COMMANDES
+    elif bouton['texte'] == "COMMANDES":
+        texte_surface = pygame.font.SysFont('arial', 28).render(bouton['texte'], True, (0, 0, 0))
     else:
         # Pour tous les autres boutons, on utilise la même police
         texte_surface = police_menu.render(bouton['texte'], True, (0, 0, 0))
@@ -103,10 +106,10 @@ bouton_5_points = creer_bouton(largeur//2 - 100, hauteur//2 - 50, 200, 50, "5 Po
 bouton_11_points = creer_bouton(largeur//2 - 100, hauteur//2 + 20, 200, 50, "11 Points")
 bouton_21_points = creer_bouton(largeur//2 - 100, hauteur//2 + 90, 200, 50, "21 Points")
 bouton_start = creer_bouton(largeur//2 - 100, hauteur//2 + 180, 200, 60, "START", (100, 200, 100), (50, 150, 50))
-bouton_commandes = creer_bouton(largeur//2 - 125, int(hauteur * 0.9), 250, 50, "COMMANDES")
-bouton_quitter = creer_bouton(largeur - 200, hauteur - 80, 180, 60, "QUITTER", couleur=(200, 80, 80), couleur_survol=(150, 50, 50))
+bouton_commandes = creer_bouton(largeur//2 - 100, int(hauteur * 0.9), 200, 50, "COMMANDES")
+bouton_quitter = creer_bouton(largeur - 200, hauteur - 80, 200, 60, "QUITTER", couleur=(200, 80, 80), couleur_survol=(150, 50, 50))
 bouton_boutique = creer_bouton(largeur//2 - 100, hauteur//2 + 330, 200, 50, "BOUTIQUE", (100, 150, 255), (50, 100, 200))
-bouton_pause = creer_bouton(largeur - 80, 20, 60, 60, "⏸", (200, 0, 0), (255, 50, 50))
+bouton_pause = creer_bouton(largeur - 50, 20, 30, 30, "⏸", (200, 0, 0), (255, 50, 50))
 bouton_solo = creer_bouton(largeur//2 - 100, hauteur//2 + 260, 200, 50, "SOLO", (100, 200, 250), (50, 150, 200))
 
  
@@ -514,10 +517,6 @@ def afficher_boutique():
                     check = ma_police.render("Équipé", True, (0, 255, 0))
                     mon_ecran.blit(check, (carte_x + largeur_carte - 110, y_ecran + 35))
                 
-                # Afficher l'index à des fins de débogage (à supprimer pour la production)
-                index_txt = ma_police.render(f"{i}", True, (255, 255, 0))
-                mon_ecran.blit(index_txt, (carte_x - 30, y_ecran + 50))
-
         if article_en_apercu:
             dessiner_apercu(article_en_apercu)
 
@@ -608,6 +607,18 @@ def afficher_commandes():
 
 
 def afficher_ecran_fin_partie():
+    global monnaie
+    static_gain_applique = False  # Variable statique pour suivre si le gain a déjà été appliqué
+    
+    # Ajouter l'attribut statique s'il n'existe pas
+    if not hasattr(afficher_ecran_fin_partie, 'gain_applique'):
+        afficher_ecran_fin_partie.gain_applique = False
+    
+    # Ajouter 100 euros de monnaie seulement si ce n'est pas déjà fait
+    if not afficher_ecran_fin_partie.gain_applique:
+        monnaie += 100
+        afficher_ecran_fin_partie.gain_applique = True
+    
     mon_ecran.fill((30, 30, 30))
     
     if gagnant == "gauche":
@@ -619,6 +630,10 @@ def afficher_ecran_fin_partie():
     
     score_final = police_titre.render(f"{score_gauche} - {score_droite}", True, (255, 255, 255))
     mon_ecran.blit(score_final, (largeur//2 - score_final.get_width()//2, hauteur//2 - 50))
+    
+    # Afficher le montant gagné
+    texte_monnaie = ma_police.render(f"+ 100 € gagnés!", True, (255, 215, 0))
+    mon_ecran.blit(texte_monnaie, (largeur//2 - texte_monnaie.get_width()//2, hauteur//2 + 20))
     
     dessiner_bouton(bouton_recommencer, mon_ecran)
     dessiner_bouton(bouton_accueil, mon_ecran)
@@ -828,6 +843,7 @@ while True:
             score_droite += 1
             if score_droite >= points_max:
                 gagnant = "droite"
+                # Ajouter 100 à la monnaie (sera traité en variable globale dans afficher_ecran_fin_partie)
                 etat_actuel = ETAT_FIN_PARTIE
             else:
                 reinitialiser_jeu()
@@ -835,6 +851,7 @@ while True:
             score_gauche += 1
             if score_gauche >= points_max:
                 gagnant = "gauche"
+                # Ajouter 100 à la monnaie (sera traité en variable globale dans afficher_ecran_fin_partie)
                 etat_actuel = ETAT_FIN_PARTIE
             else:
                 reinitialiser_jeu()
@@ -870,6 +887,9 @@ while True:
                 reinitialiser_jeu()
                 score_gauche = 0
                 score_droite = 0
+                # Réinitialiser le suivi du gain pour la prochaine partie
+                if hasattr(afficher_ecran_fin_partie, 'gain_applique'):
+                    afficher_ecran_fin_partie.gain_applique = False
             elif est_bouton_clique(bouton_commandes, evenement):
                 afficher_commandes()
             elif est_bouton_clique(bouton_quitter, evenement):
@@ -896,9 +916,13 @@ while True:
                 reinitialiser_jeu()
                 score_gauche = 0
                 score_droite = 0
+                # Réinitialiser le suivi du gain pour la prochaine partie
+                afficher_ecran_fin_partie.gain_applique = False
             elif est_bouton_clique(bouton_accueil, evenement):
                 etat_actuel = ETAT_ACCUEIL
-                
+                # Réinitialiser le suivi du gain pour la prochaine partie
+                afficher_ecran_fin_partie.gain_applique = False
+
         elif etat_actuel == ETAT_JEU:
             verifier_survol_bouton(bouton_pause, position_souris)
             if evenement.type == pygame.MOUSEBUTTONDOWN and evenement.button == 1:
