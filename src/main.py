@@ -3,6 +3,10 @@ import pygame
 from math import cos, sin, pi
 from pygame.locals import QUIT
 from random import choice, randint, uniform
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ASSETS_DIR = os.path.join(BASE_DIR, 'assets')
 
 NOIR = (0, 0, 0)
 BLANC = (255, 255, 255)
@@ -24,15 +28,50 @@ monnaie = 300
 pygame.init()
 largeur, hauteur = 800, 600
 couleur_fond = (0, 100, 0)  # Vert foncé pour la table
-mon_ecran = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-largeur, hauteur = pygame.display.get_surface().get_size()
+est_plein_ecran = False
+mon_ecran = pygame.display.set_mode((largeur, hauteur))
 pygame.display.set_caption('Ping Pong Game!')
 
-son_achat = pygame.mixer.Sound("src/assets/son_achat.wav")
-son_erreur = pygame.mixer.Sound("src/assets/son_erreur.wav")
+def basculer_plein_ecran():
+    global mon_ecran, largeur, hauteur, est_plein_ecran
+    est_plein_ecran = not est_plein_ecran
+    if est_plein_ecran:
+        mon_ecran = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        largeur, hauteur = pygame.display.get_surface().get_size()
+    else:
+        largeur, hauteur = 800, 600
+        mon_ecran = pygame.display.set_mode((largeur, hauteur))
+    
+    # Mise à jour des positions des boutons
+    mettre_a_jour_positions_boutons()
+
+# Fonction pour mettre à jour les positions des boutons en fonction de la taille de l'écran
+def mettre_a_jour_positions_boutons():
+    global bouton_5_points, bouton_11_points, bouton_21_points, bouton_start
+    global bouton_commandes, bouton_quitter, bouton_boutique, bouton_pause, bouton_solo
+    global bouton_recommencer, bouton_accueil
+    
+    # Menu principal
+    bouton_5_points['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 - 50, 200, 50)
+    bouton_11_points['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 + 20, 200, 50)
+    bouton_21_points['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 + 90, 200, 50)
+    bouton_start['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 + 180, 200, 60)
+    bouton_commandes['rect'] = pygame.Rect(20, hauteur - 80, 200, 50)
+    bouton_quitter['rect'] = pygame.Rect(largeur - 200, hauteur - 80, 200, 60)
+    bouton_boutique['rect'] = pygame.Rect(20, hauteur - 140, 200, 50)
+    bouton_pause['rect'] = pygame.Rect(largeur - 50, 20, 30, 30)
+    bouton_solo['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 + 260, 200, 50)
+    
+    # Écran de fin de partie
+    bouton_recommencer['rect'] = pygame.Rect(largeur//2 - 220, hauteur//2 + 100, 200, 60)
+    bouton_accueil['rect'] = pygame.Rect(largeur//2 + 20, hauteur//2 + 100, 200, 60)
+
+# Remplacement par l'utilisation de chemins relatifs robustes
+son_achat = pygame.mixer.Sound(os.path.join(ASSETS_DIR, "son_achat.wav"))
+son_erreur = pygame.mixer.Sound(os.path.join(ASSETS_DIR, "son_erreur.wav"))
 
 # Chargement de l'image de bonus
-image_bonus = pygame.image.load('src/assets/bonus.png')
+image_bonus = pygame.image.load(os.path.join(ASSETS_DIR, "bonus.png"))
 # L'image contient 4 bonus côte à côte
 largeur_bonus = image_bonus.get_width() // 4
 sprites_bonus = [
@@ -117,9 +156,9 @@ bouton_5_points = creer_bouton(largeur//2 - 100, hauteur//2 - 50, 200, 50, "5 Po
 bouton_11_points = creer_bouton(largeur//2 - 100, hauteur//2 + 20, 200, 50, "11 Points")
 bouton_21_points = creer_bouton(largeur//2 - 100, hauteur//2 + 90, 200, 50, "21 Points")
 bouton_start = creer_bouton(largeur//2 - 100, hauteur//2 + 180, 200, 60, "START", (100, 200, 100), (50, 150, 50))
-bouton_commandes = creer_bouton(largeur//2 - 100, int(hauteur * 0.9), 200, 50, "COMMANDES")
+bouton_commandes = creer_bouton(20, hauteur - 80, 200, 50, "COMMANDES")
 bouton_quitter = creer_bouton(largeur - 200, hauteur - 80, 200, 60, "QUITTER", couleur=(200, 80, 80), couleur_survol=(150, 50, 50))
-bouton_boutique = creer_bouton(largeur//2 - 100, hauteur//2 + 330, 200, 50, "BOUTIQUE", (100, 150, 255), (50, 100, 200))
+bouton_boutique = creer_bouton(20, hauteur - 140, 200, 50, "BOUTIQUE", (100, 150, 255), (50, 100, 200))
 bouton_pause = creer_bouton(largeur - 50, 20, 30, 30, "⏸", (200, 0, 0), (255, 50, 50))
 bouton_solo = creer_bouton(largeur//2 - 100, hauteur//2 + 260, 200, 50, "SOLO", (100, 200, 250), (50, 150, 200))
 
@@ -1052,6 +1091,8 @@ while True:
                     mouv_bas_d = True
                 elif evenement.key == pygame.K_UP:
                     mouv_haut_d = True
+                elif evenement.key == pygame.K_f:  # Touche F pour basculer en plein écran
+                    basculer_plein_ecran()
             elif evenement.type == pygame.KEYUP:
                 if evenement.key == pygame.K_s:
                     mouv_bas_g = False
