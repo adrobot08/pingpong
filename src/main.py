@@ -55,12 +55,12 @@ def mettre_a_jour_positions_boutons():
     bouton_5_points['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 - 50, 200, 50)
     bouton_11_points['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 + 20, 200, 50)
     bouton_21_points['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 + 90, 200, 50)
-    bouton_start['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 + 180, 200, 60)
+    bouton_start['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 + 150, 200, 60)
+    bouton_solo['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 + 220, 200, 50)
     bouton_commandes['rect'] = pygame.Rect(20, hauteur - 80, 200, 50)
     bouton_quitter['rect'] = pygame.Rect(largeur - 200, hauteur - 80, 200, 60)
     bouton_boutique['rect'] = pygame.Rect(20, hauteur - 140, 200, 50)
     bouton_pause['rect'] = pygame.Rect(largeur - 50, 20, 30, 30)
-    bouton_solo['rect'] = pygame.Rect(largeur//2 - 100, hauteur//2 + 260, 200, 50)
     
     # Écran de fin de partie
     bouton_recommencer['rect'] = pygame.Rect(largeur//2 - 220, hauteur//2 + 100, 200, 60)
@@ -155,12 +155,12 @@ def est_bouton_clique(bouton, evenement):
 bouton_5_points = creer_bouton(largeur//2 - 100, hauteur//2 - 50, 200, 50, "5 Points")
 bouton_11_points = creer_bouton(largeur//2 - 100, hauteur//2 + 20, 200, 50, "11 Points")
 bouton_21_points = creer_bouton(largeur//2 - 100, hauteur//2 + 90, 200, 50, "21 Points")
-bouton_start = creer_bouton(largeur//2 - 100, hauteur//2 + 180, 200, 60, "START", (100, 200, 100), (50, 150, 50))
+bouton_start = creer_bouton(largeur//2 - 100, hauteur//2 + 150, 200, 60, "START", (100, 200, 100), (50, 150, 50))
+bouton_solo = creer_bouton(largeur//2 - 100, hauteur//2 + 220, 200, 50, "SOLO", (100, 200, 250), (50, 150, 200))
 bouton_commandes = creer_bouton(20, hauteur - 80, 200, 50, "COMMANDES")
 bouton_quitter = creer_bouton(largeur - 200, hauteur - 80, 200, 60, "QUITTER", couleur=(200, 80, 80), couleur_survol=(150, 50, 50))
 bouton_boutique = creer_bouton(20, hauteur - 140, 200, 50, "BOUTIQUE", (100, 150, 255), (50, 100, 200))
 bouton_pause = creer_bouton(largeur - 50, 20, 30, 30, "⏸", (200, 0, 0), (255, 50, 50))
-bouton_solo = creer_bouton(largeur//2 - 100, hauteur//2 + 260, 200, 50, "SOLO", (100, 200, 250), (50, 150, 200))
 
  
 
@@ -387,20 +387,25 @@ def afficher_menu_pause():
 def afficher_ecran_accueil():
     mon_ecran.fill((30, 30, 30))
     
+    # Titre centré horizontalement et positionné relativement à la hauteur
     titre = police_titre.render("PING PONG GAME", True, (255, 255, 255))
-    mon_ecran.blit(titre, (largeur//2 - titre.get_width()//2, 100))
+    position_titre_x = largeur // 2 - titre.get_width() // 2
+    position_titre_y = hauteur * 0.15  # 15% de la hauteur de l'écran
+    mon_ecran.blit(titre, (position_titre_x, position_titre_y))
     
+    # Sous-titre centré horizontalement et positionné relativement
     sous_titre = ma_police.render("Sélectionnez le nombre de points pour gagner:", True, (200, 200, 200))
-    mon_ecran.blit(sous_titre, (largeur//2 - sous_titre.get_width()//2, hauteur//2 - 120))
+    position_sous_titre_x = largeur // 2 - sous_titre.get_width() // 2
+    position_sous_titre_y = hauteur * 0.30  # 30% de la hauteur de l'écran
+    mon_ecran.blit(sous_titre, (position_sous_titre_x, position_sous_titre_y))
     
-    # Indicateur de sélection
+    # Indicateur de sélection, s'aligne dynamiquement avec les boutons
     if points_max == 5:
         pygame.draw.circle(mon_ecran, (255, 255, 0), (bouton_5_points['rect'].x - 20, bouton_5_points['rect'].centery), 10)
     elif points_max == 11:
         pygame.draw.circle(mon_ecran, (255, 255, 0), (bouton_11_points['rect'].x - 20, bouton_11_points['rect'].centery), 10)
     elif points_max == 21:
         pygame.draw.circle(mon_ecran, (255, 255, 0), (bouton_21_points['rect'].x - 20, bouton_21_points['rect'].centery), 10)
-
     
     # Affichage des boutons
     dessiner_bouton(bouton_5_points, mon_ecran)
