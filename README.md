@@ -2,12 +2,70 @@
 
 Un jeu de ping pong dynamique avec bonus et système de service, développé avec Pygame.
 
-## Fonctionnalités
+## Binôme
+
+Florian Henry-Labordère
+Adrien Rognier 
+(103)
+
+## Modules à installer
+
+Pour exécuter ce jeu, vous aurez besoin des modules suivants :
+
+```
+pygame
+```
+
+## Indications de démarrage
+
+### Avec Thonny
+
+Pour exécuter le jeu avec l'éditeur Thonny :
+
+1. Ouvrez Thonny
+2. Allez dans Outils > Gérer les paquets
+3. Recherchez "pygame" et cliquez sur "Installer"
+4. Ouvrez le fichier src/main.py
+5. Cliquez sur le bouton "Exécuter" (triangle vert) ou appuyez sur F5
+
+### Avec Conda
+
+Si vous utilisez Conda, vous pouvez créer un environnement dédié et installer Pygame :
+
+```bash
+# Créer un nouvel environnement
+conda create -n pingpong python=3.9
+
+# Activer l'environnement
+conda activate pingpong
+
+# Installer Pygame
+pip install pygame
+
+# Lancer le jeu
+python src/main.py
+```
+
+
+### Contrôles principaux
+
+- **Joueur 1 (gauche)** : Z (monter) et S (descendre)
+- **Joueur 2 (droite)** : Flèche haut (monter) et Flèche bas (descendre)
+- **F** : Activer/désactiver le mode plein écran
+- **Souris** : Navigation dans les menus 
+
+## Améliorations
 
 ### Écran d'accueil
 - Sélection du nombre de points à atteindre pour gagner: 5, 11 ou 21 points
 - Bouton START pour lancer la partie
-- Affichage des contrôles
+- "Commandes" pour afficher les contrôles
+- Mode SOLO pour jouer contre l'ordinateur
+- Accès à la BOUTIQUE pour personnaliser le jeu
+
+### Mode Solo
+- Jouez contre l'intelligence artificielle
+- La raquette adverse suit automatiquement la position de la balle
 
 ### Système de jeu
 - Table de jeu verte avec ligne centrale et bordure
@@ -15,6 +73,8 @@ Un jeu de ping pong dynamique avec bonus et système de service, développé ave
 - Système de service alternant tous les 2 points
 - Indication visuelle du serveur actuel
 - Rebond des balles avec accélération progressive
+- Mode plein écran disponible (touche F)
+- Menu pause accessible pendant la partie
 
 ### Système de bonus
 Plusieurs bonus peuvent apparaître simultanément sur la table et se déplacer dans différentes directions:
@@ -34,6 +94,13 @@ Plusieurs bonus peuvent apparaître simultanément sur la table et se déplacer 
 4. **Multi-balle** (quatrième sprite)
    - Génère jusqu'à deux balles supplémentaires
    - Les balles supplémentaires restent en jeu jusqu'à ce qu'un point soit marqué
+
+### Boutique
+- Personnalisez votre expérience de jeu avec la monnaie gagnée
+- Différents skins pour la balle: normale, flamme, électrique, glace
+- Designs de raquettes: classique, laser, feu, pixel
+- Couleurs de fond: vert, bleu, nuit, futuriste
+- Styles visuels: moderne, rétro, néon, cartoon
 
 ### Affichage du score
 - Score central en haut de l'écran
