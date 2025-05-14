@@ -33,7 +33,7 @@ mon_ecran = pygame.display.set_mode((largeur, hauteur))
 pygame.display.set_caption('Ping Pong Game!')
 
 def basculer_plein_ecran():
-    global mon_ecran, largeur, hauteur, est_plein_ecran
+    global mon_ecran, largeur, hauteur, est_plein_ecran, raq_d_x
     est_plein_ecran = not est_plein_ecran
     if est_plein_ecran:
         mon_ecran = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
@@ -41,6 +41,9 @@ def basculer_plein_ecran():
     else:
         largeur, hauteur = 800, 600
         mon_ecran = pygame.display.set_mode((largeur, hauteur))
+    
+    # Mise à jour de la position horizontale de la raquette droite
+    raq_d_x = largeur - 30
     
     # Mise à jour des positions des boutons
     mettre_a_jour_positions_boutons()
@@ -716,6 +719,11 @@ def afficher_commandes():
             "- Flèche Bas : descendre"
         ]
 
+        touches_generales = [
+            "Général :",
+            "- F : plein écran"
+        ]
+
         for i, ligne in enumerate(touches_j1):
             texte = ma_police.render(ligne, True, BLANC)
             mon_ecran.blit(texte, (100, 200 + i * 40))
@@ -723,6 +731,10 @@ def afficher_commandes():
         for i, ligne in enumerate(touches_j2):
             texte = ma_police.render(ligne, True, BLANC)
             mon_ecran.blit(texte, (largeur // 2 + 50, 200 + i * 40))
+
+        for i, ligne in enumerate(touches_generales):
+            texte = ma_police.render(ligne, True, BLANC)
+            mon_ecran.blit(texte, (100, 350 + i * 40))
 
         info_sortie = ma_police.render("Appuie sur une touche ou clique pour revenir au menu", True, GRIS)
         mon_ecran.blit(info_sortie, info_sortie.get_rect(center=(largeur // 2, 500)))
