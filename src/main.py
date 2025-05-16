@@ -1047,7 +1047,9 @@ while True:
             verifier_survol_bouton(bouton_solo, position_souris)
             
             
-            if est_bouton_clique(bouton_5_points, evenement):
+            if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_f:
+                basculer_plein_ecran()
+            elif est_bouton_clique(bouton_5_points, evenement):
                 points_max = 5
             elif est_bouton_clique(bouton_11_points, evenement):
                 points_max = 11
@@ -1082,7 +1084,9 @@ while True:
             verifier_survol_bouton(bouton_recommencer, position_souris)
             verifier_survol_bouton(bouton_accueil, position_souris)
             
-            if est_bouton_clique(bouton_recommencer, evenement):
+            if evenement.type == pygame.KEYDOWN and evenement.key == pygame.K_f:
+                basculer_plein_ecran()
+            elif est_bouton_clique(bouton_recommencer, evenement):
                 etat_actuel = ETAT_JEU
                 reinitialiser_jeu()
                 score_gauche = 0
